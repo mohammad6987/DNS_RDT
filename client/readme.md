@@ -1,4 +1,4 @@
-# UDP DNS Client
+# DNS RDT Client
 
 This Go program implements a simple UDP client that sends DNS queries to a specified server. The client splits the DNS query into multiple packets, sends them to the server, and waits for acknowledgments (ACK) for each packet.
 
@@ -87,7 +87,7 @@ This function constructs a DNS query for a given domain name using the miekg/dns
 ## Example
 
 When you run the client, it will look like this:
-
+```bash
 Enter domain name to query: example.com
 Session sequence number: 123
 Splitting DNS query into 2 packets
@@ -96,7 +96,7 @@ ACK received for packet 1
 Sent packet 2 of 2 (sequence number: 123)
 ACK received for packet 2
 Session complete. Closing connection.
-
+```
 ## Notes
 
 - Make sure you have a DNS server running and accessible at 127.0.0.1:53 before running this client.
