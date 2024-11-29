@@ -1,6 +1,6 @@
-# DNS Server with RDT 
+# Simple UDP Server with Packet Reassembly
 
-This Go program implements a simple DNS server designed to receive and reassemble packets. It uses the DNS protocol library `github.com/miekg/dns` to handle DNS messages.
+This Go program implements a simple UDP server designed to receive and reassemble packets. It uses the DNS protocol library `github.com/miekg/dns` to handle DNS messages.
 
 ## Code Breakdown
 
@@ -49,3 +49,4 @@ Use `make install` to tidy up Go modules.
 - The server expects packets formatted in a specific way (with fields separated by `|`) and encoded in hexadecimal format for the data chunk.
 - The timeout mechanism resets the state if no packets are received within the specified period, ensuring that stale data does not accumulate.
 
+This implementation is suitable for a basic UDP packet handling scenario with reassembly logic and acknowledgment feedback but may need enhancements for production use, including better error handling and logging.

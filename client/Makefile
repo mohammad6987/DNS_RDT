@@ -2,36 +2,20 @@ BINARY_NAME=client
 GO=go
 GOFLAGS=
 LDFLAGS=-ldflags="-s -w" 
-
-
 all: build
-
-
 build:
 	$(GO) build $(GOFLAGS) -o $(BINARY_NAME) .
-
-
 run: build
 	./$(BINARY_NAME)
-
-
 clean:
 	rm -f $(BINARY_NAME)
-
-
 test:
 	$(GO) test ./...
-
-
 install:
 	$(GO) mod tidy
-
-
 info:
 	$(GO) version
 	$(GO) env
-
-
 help:
 	@echo "Makefile targets:"
 	@echo "  all        - Build the project (default target)"

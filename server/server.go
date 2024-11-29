@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net"
 	"sort"
@@ -8,11 +9,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/miekg/dns"
 )
 
 const (
 	DNSPort       = ":53"
-	MaxRetries    = 5
 	TimeoutPeriod = 120 * time.Second
 )
 
@@ -67,11 +69,10 @@ func handlePacket(conn *net.UDPConn, packetData []byte, clientAddr *net.UDPAddr,
 	seqNum := parts[0]
 	packetIndex := parts[1]
 	totalPacketsStr := parts[2]
-	packetContent := parts[3]
+	encodedChunk := parts[3]
 
-	// Handle termination signal from client
 	if packetIndex == "close" {
-		fmt.Println("Received termination signal. Closing This session and waiting for a nwe one")
+		fmt.Println("Received termination signal. Closing session.")
 		*packetMap = make(map[int]string)
 		*expectedSeqNum = ""
 		timeoutTimer.Stop()
@@ -79,7 +80,6 @@ func handlePacket(conn *net.UDPConn, packetData []byte, clientAddr *net.UDPAddr,
 		return
 	}
 
-	
 	packetIndexInt, err := strconv.Atoi(packetIndex)
 	if err != nil {
 		fmt.Println("Error parsing packet index:", err)
@@ -99,9 +99,13 @@ func handlePacket(conn *net.UDPConn, packetData []byte, clientAddr *net.UDPAddr,
 		return
 	}
 
-	(*packetMap)[packetIndexInt] = packetContent
-	fmt.Printf("size of packetMap = %d\n", len(*packetMap))
-	fmt.Printf("Received and stored packet %d: %x\n", packetIndexInt, packetContent)
+	decodedChunk, err := hex.DecodeString(encodedChunk)
+	if err != nil {
+		fmt.Println("Error decoding packet content:", err)
+		return
+	}
+	(*packetMap)[packetIndexInt] = string(decodedChunk)
+	fmt.Printf("Received and stored packet %d: %s\n", packetIndexInt, string(decodedChunk))
 
 	ackMsg := fmt.Sprintf("%s|%d", seqNum, packetIndexInt)
 	_, err = conn.WriteToUDP([]byte(ackMsg), clientAddr)
@@ -111,7 +115,6 @@ func handlePacket(conn *net.UDPConn, packetData []byte, clientAddr *net.UDPAddr,
 	}
 	fmt.Printf("Sent ACK for packet %d\n", packetIndexInt)
 
-	
 	if len(*packetMap) == totalPackets {
 		fmt.Println("\nReceived packets in order:")
 		var indices []int
@@ -120,12 +123,19 @@ func handlePacket(conn *net.UDPConn, packetData []byte, clientAddr *net.UDPAddr,
 		}
 		sort.Ints(indices)
 
-		
+		var reassembledData []byte
 		for _, idx := range indices {
-			fmt.Printf("%x", (*packetMap)[idx])
+			reassembledData = append(reassembledData, []byte((*packetMap)[idx])...)
 		}
 
-		
+		var msg dns.Msg
+		err := msg.Unpack(reassembledData)
+		if err != nil {
+			fmt.Println("Malformed DNS packet:", err)
+		} else {
+			fmt.Println("\nReassembled DNS packet:", msg.String())
+		}
+
 		*packetMap = make(map[int]string)
 		*expectedSeqNum = ""
 		timeoutTimer.Stop()
